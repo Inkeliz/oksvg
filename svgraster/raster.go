@@ -3,11 +3,10 @@
 package svgraster
 
 import (
-	"image"
-	"io"
-
 	"github.com/inkeliz/oksvg/svgicon"
 	"github.com/srwiley/rasterx"
+	"image"
+	"io"
 )
 
 // assert interface conformance
@@ -52,11 +51,25 @@ func RasterSVGIconToImage(icon io.Reader, scanner rasterx.Scanner) (*image.RGBA,
 	return rasterSVG(icon, scanner, 0, 0)
 }
 
-// RasterSVGIconToImageSize uses a sacanner instance to render the icon
+// RasterSVGIconToImageSize uses a scanner instance to render the icon
 // with a custom size, instead of the original size of the SVG file.
 // If `scanner` is nil, a default scanner rasterx.ScannerGV is used.
 func RasterSVGIconToImageSize(icon io.Reader, scanner rasterx.Scanner, width, height int) (*image.RGBA, error) {
 	return rasterSVG(icon, scanner, width, height)
+}
+
+// RasterIcon uses a sacanner instance to render the icon
+// with a custom size, instead of the original size of the SVG file.
+// If `scanner` is nil, a default scanner rasterx.ScannerGV is used.
+func RasterIcon(icon *svgicon.SvgIcon) (*image.RGBA, error) {
+	return rasterIcon(icon, nil, int(icon.ViewBox.W), int(icon.ViewBox.H)), nil
+}
+
+// RasterIconSize uses a sacanner instance to render the icon
+// with a custom size, instead of the original size of the SVG file.
+// If `scanner` is nil, a default scanner rasterx.ScannerGV is used.
+func RasterIconSize(icon *svgicon.SvgIcon, width, height int) (*image.RGBA, error) {
+	return rasterIcon(icon, nil, width, height), nil
 }
 
 func rasterSVG(icon io.Reader, scanner rasterx.Scanner, w, h int) (*image.RGBA, error) {
@@ -69,7 +82,11 @@ func rasterSVG(icon io.Reader, scanner rasterx.Scanner, w, h int) (*image.RGBA, 
 		w, h = int(parsedIcon.ViewBox.W), int(parsedIcon.ViewBox.H)
 	}
 
-	parsedIcon.SetTarget(0, 0, float64(w), float64(h))
+	return rasterIcon(parsedIcon, scanner, w, h), nil
+}
+
+func rasterIcon(icon *svgicon.SvgIcon, scanner rasterx.Scanner, w, h int) *image.RGBA {
+	icon.SetTarget(0, 0, float64(w), float64(h))
 
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 
@@ -77,9 +94,10 @@ func rasterSVG(icon io.Reader, scanner rasterx.Scanner, w, h int) (*image.RGBA, 
 		scanner = rasterx.NewScannerGV(w, h, img, img.Bounds())
 	}
 	renderer := NewDriver(w, h, scanner)
-	parsedIcon.Draw(renderer, 1.0)
 
-	return img, nil
+	icon.Draw(renderer, 1.0)
+
+	return img
 }
 
 func toRasterxGradient(grad svgicon.Gradient) rasterx.Gradient {
