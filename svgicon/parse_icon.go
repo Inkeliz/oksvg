@@ -136,6 +136,9 @@ func (c *iconCursor) readStyleAttr(curStyle *PathStyle, k, v string) error {
 			curStyle.FillerColor = gradient
 			break
 		}
+		if v == "currentColor" {
+			v = "#FFFFFF"
+		}
 		optCol, err := parseSVGColor(v)
 		curStyle.FillerColor = optCol.asPattern()
 		return err
